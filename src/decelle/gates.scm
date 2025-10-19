@@ -1,12 +1,13 @@
 ;; src/decelle/gates.scm
 (define-module (decelle gates)
   #:use-module (decelle wire)
-  #:export (inverter and-gate or-gate))
+  #:export (inverter and-gate or-gate xor-gate))
 
 ;; Local constants
 (define inverter-delay 2)
 (define and-gate-delay 3)
 (define or-gate-delay 5)
+(define xor-gate-delay 8)
 
 ;; Logical tests
 ;; Not the most efficient code, but it is simple
@@ -25,6 +26,13 @@
 
 (define (logical-or s1 s2)
   (cond ((and (= s1 1) (= s2 1)) 1)
+        ((and (= s1 1) (= s2 0)) 1)
+        ((and (= s1 0) (= s2 1)) 1)
+        ((and (= s1 0) (= s2 0)) 0)
+        (else (error "Invalid signal" (list s1 s2)))))
+
+(define (logical-xor s1 s2)
+  (cond ((and (= s1 1) (= s2 1)) 0)
         ((and (= s1 1) (= s2 0)) 1)
         ((and (= s1 0) (= s2 1)) 1)
         ((and (= s1 0) (= s2 0)) 0)
@@ -60,6 +68,14 @@
   (make-gate
     or-gate-delay
     logical-or
+    (list a1 a2)
+    output
+    after-delay))
+
+(define (xor-gate a1 a2 output after-delay)
+  (make-gate
+    xor-gate-delay
+    logical-xor
     (list a1 a2)
     output
     after-delay))

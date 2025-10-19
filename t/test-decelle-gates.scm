@@ -77,6 +77,29 @@
     (get-signal out))
   0)
 
+;; XOR
+(test-equal "xor-gate 1 0 => 1"
+  (let ((a (make-wire))
+        (b (make-wire))
+        (out (make-wire)))
+    (set! test-events '())
+    (set-signal! a 1)
+    (set-signal! b 0)
+    (xor-gate a b out mock-after-delay)
+    (get-signal out))
+  1)
+
+(test-equal "xor-gate 1 1 => 0"
+  (let ((a (make-wire))
+        (b (make-wire))
+        (out (make-wire)))
+    (set! test-events '())
+    (set-signal! a 1)
+    (set-signal! b 1)
+    (xor-gate a b out mock-after-delay)
+    (get-signal out))
+  0)
+
 ;; after-delay called check (isolated)
 (test-equal "after-delay called once per gate connection"
   (let ((a (make-wire))
