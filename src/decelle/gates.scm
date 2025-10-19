@@ -37,7 +37,8 @@
     (let ((new-value (apply logical-test (map get-signal input-wires))))
       (after-delay gate-delay
                    (λ () (set-signal! output-wire new-value)))))
-  (for-each (λ (w) (add-action! w gate-action)) input-wires))
+  (for-each (λ (w) (add-action! w gate-action)) input-wires)
+  'ok)
 
 (define (inverter input output after-delay)
   (make-gate
