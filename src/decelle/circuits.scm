@@ -26,7 +26,8 @@
                      (make-wire))))
         (full-adder (car ak) (car bk) c-in (car sk) c-out after-delay)
         (make-ripple (cdr ak) (cdr bk) c-out (cdr sk)))))
-  (if (= (length a-lst) (length b-lst) (length s-lst))
+  (if (and (> (length a-lst) 0)
+           (= (length a-lst) (length b-lst) (length s-lst)))
     (make-ripple a-lst b-lst c-start s-lst)
     (error "Wrong number of wires: RIPPLE-CARRY-ADDER"
            (list a-lst b-lst s-lst))))
@@ -46,15 +47,22 @@
 (define (make-mux-n inputs selectors output after-delay)
   ;; folding pairwise reduction
   (define (reduce-level cur-lst next-lst sel)
-    (if (null? sel)
-      'ok
-      (let ((o (if (null? (cdr sel))
-                 output
-                 (make-wire))))
-        (mux-2 (car cur-lst) (cadr cur-lst) (car sel) o after-delay)
+    (if (and (null? (cddr cur-lst))
+             (null? next-lst))
+      (begin ;; last reduction
+        (mux-2 (car cur-lst) (cadr cur-lst) (car sel)
+               output after-delay)
+        'ok)
+      (let ((o (make-wire)))
+        (mux-2 (car cur-lst) (cadr cur-lst) (car sel)
+               o after-delay)
         (if (null? (cddr cur-lst))
-          (reduce-level (cons o next-lst) '() (cdr sel))
-          (reduce-level (cddr cur-lst) (cons o next-lst) sel)))))
+          ;; reduce one level
+          (reduce-level (reverse (cons o next-lst))
+                        '() (cdr sel))
+          ;; next pair
+          (reduce-level (cddr cur-lst)
+                        (cons o next-lst) sel)))))
   (if (and (> (length inputs) 0)
            (= (expt 2 (length selectors))
               (length inputs)))
