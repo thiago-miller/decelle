@@ -6,67 +6,138 @@
 
 (test-begin "decelle-circuits")
 
-;; Mock do after-delay
+;; Mock after-delay
 (define test-events '())
 (define (mock-after-delay delay action)
   (set! test-events (cons (list delay action) test-events))
   (action))
 
-;; --- Half Adder ---
-(define a (make-wire))
-(define b (make-wire))
-(define s (make-wire))
-(define c (make-wire))
+;; HALF ADDER
+(test-group "half-adder"
+  (let ((a (make-wire))
+        (b (make-wire))
+        (s (make-wire))
+        (c (make-wire)))
+    (half-adder a b s c mock-after-delay)
 
-(half-adder a b s c mock-after-delay)
+    (set-signal! a 0)
+    (set-signal! b 0)
+    (test-equal "HA: 0 0 -> sum=0 carry=0" 0 (get-signal s))
+    (test-equal "HA: 0 0 -> carry=0" 0 (get-signal c))
 
-(set-signal! a 0)
-(set-signal! b 0)
-(test-equal "HA: 0 0 -> sum=0 carry=0" 0 (get-signal s))
-(test-equal "HA: 0 0 -> carry=0" 0 (get-signal c))
+    (set-signal! b 1)
+    (test-equal "HA: 0 1 -> sum=1 carry=0" 1 (get-signal s))
+    (test-equal "HA: 0 1 -> carry=0" 0 (get-signal c))
 
-(set-signal! b 1)
-(test-equal "HA: 0 1 -> sum=1 carry=0" 1 (get-signal s))
-(test-equal "HA: 0 1 -> carry=0" 0 (get-signal c))
+    (set-signal! a 1)
+    (test-equal "HA: 1 1 -> sum=0 carry=1" 0 (get-signal s))
+    (test-equal "HA: 1 1 -> carry=1" 1 (get-signal c))))
 
-(set-signal! a 1)
-(test-equal "HA: 1 1 -> sum=0 carry=1" 0 (get-signal s))
-(test-equal "HA: 1 1 -> carry=1" 1 (get-signal c))
+;; FULL ADDER
+(test-group "full-adder"
+  (let ((a2 (make-wire))
+        (b2 (make-wire))
+        (cin (make-wire))
+        (sum (make-wire))
+        (cout (make-wire)))
+    (full-adder a2 b2 cin sum cout mock-after-delay)
 
-;; --- Full Adder ---
-(define a2 (make-wire))
-(define b2 (make-wire))
-(define cin (make-wire))
-(define sum (make-wire))
-(define cout (make-wire))
+    (set-signal! a2 1)
+    (set-signal! b2 1)
+    (set-signal! cin 1)
 
-(full-adder a2 b2 cin sum cout mock-after-delay)
+    (test-equal "FA: 1 1 1 -> sum=1 carry=1" 1 (get-signal sum))
+    (test-equal "FA: 1 1 1 -> carry=1" 1 (get-signal cout))))
 
-(set-signal! a2 1)
-(set-signal! b2 1)
-(set-signal! cin 1)
+;; RIPPLE-CARRY ADDER (2 bits)
+(test-group "ripple-carry-adder"
+  (let ((a-lst (list (make-wire) (make-wire)))
+        (b-lst (list (make-wire) (make-wire)))
+        (s-lst (list (make-wire) (make-wire)))
+        (c-in (make-wire))
+        (c-out (make-wire)))
+    (ripple-carry-adder a-lst b-lst c-in s-lst c-out mock-after-delay)
 
-(test-equal "FA: 1 1 1 -> sum=1 carry=1" 1 (get-signal sum))
-(test-equal "FA: 1 1 1 -> carry=1" 1 (get-signal cout))
+    ;; Simulating 01 + 11 = 100
+    (set-signal! (car a-lst) 1)  ;; A0 = 1
+    (set-signal! (cadr a-lst) 0) ;; A1 = 0
+    (set-signal! (car b-lst) 1)  ;; B0 = 1
+    (set-signal! (cadr b-lst) 1) ;; B1 = 1
+    (set-signal! c-in 0)
 
-;; --- Ripple Carry Adder (2 bits) ---
-(define a-lst (list (make-wire) (make-wire)))
-(define b-lst (list (make-wire) (make-wire)))
-(define s-lst (list (make-wire) (make-wire)))
-(define c-in (make-wire))
-(define c-out (make-wire))
+    (test-equal "RCA: sum bit 0 = 0" 0 (get-signal (car s-lst)))
+    (test-equal "RCA: sum bit 1 = 0" 0 (get-signal (cadr s-lst)))
+    (test-equal "RCA: carry out = 1" 1 (get-signal c-out))))
 
-(ripple-carry-adder a-lst b-lst c-in s-lst c-out mock-after-delay)
+;; MUX-2
+(test-group "mux-2"
+  (let ((a (make-wire))
+        (b (make-wire))
+        (sel (make-wire))
+        (out (make-wire)))
+    (set! test-events '())
+    (mux-2 a b sel out mock-after-delay)
 
-;; Simulating 01 + 11 = 100
-(set-signal! (car a-lst) 1)  ;; A0 = 1
-(set-signal! (cadr a-lst) 0) ;; A1 = 0
-(set-signal! (car b-lst) 1)  ;; B0 = 1
-(set-signal! (cadr b-lst) 1) ;; B1 = 1
-(set-signal! c-in 0)
+    ;; sel = 0 → out follows a
+    (set-signal! sel 0)
+    (set-signal! a 1)
+    (set-signal! b 0)
+    (test-equal "MUX2: sel=0 -> out=a" 1 (get-signal out))
 
-(test-equal "RCA: sum bit 0 = 0" 0 (get-signal (car s-lst)))
-(test-equal "RCA: sum bit 1 = 0" 0 (get-signal (cadr s-lst)))
-(test-equal "RCA: carry out = 1" 1 (get-signal c-out))
+    ;; sel = 1 → out follows b
+    (set-signal! sel 1)
+    (set-signal! a 0)
+    (set-signal! b 1)
+    (test-equal "MUX2: sel=1 -> out=b" 1 (get-signal out))
+
+    ;; alternating
+    (set-signal! sel 0)
+    (set-signal! a 0)
+    (set-signal! b 1)
+    (test-equal "MUX2: sel=0 -> out=0" 0 (get-signal out))
+    (set-signal! sel 1)
+    (test-equal "MUX2: sel=1 -> out=1" 1 (get-signal out))
+
+    (test-assert "MUX2: after-delay called" (> (length test-events) 2))))
+
+;; MUX-4
+(test-group "mux-4"
+  (let ((a (make-wire))
+        (b (make-wire))
+        (c (make-wire))
+        (d (make-wire))
+        (sel0 (make-wire))
+        (sel1 (make-wire))
+        (out (make-wire)))
+    (set! test-events '())
+    (mux-4 a b c d sel0 sel1 out mock-after-delay)
+
+    ;; inputs
+    (set-signal! a 0)
+    (set-signal! b 1)
+    (set-signal! c 0)
+    (set-signal! d 1)
+
+    ;; 00 -> a
+    (set-signal! sel0 0)
+    (set-signal! sel1 0)
+    (test-equal "MUX4: sel=00 -> out=a" (get-signal a) (get-signal out))
+
+    ;; 01 -> b
+    (set-signal! sel0 1)
+    (set-signal! sel1 0)
+    (test-equal "MUX4: sel=01 -> out=b" (get-signal b) (get-signal out))
+
+    ;; 10 -> c
+    (set-signal! sel0 0)
+    (set-signal! sel1 1)
+    (test-equal "MUX4: sel=10 -> out=c" (get-signal c) (get-signal out))
+
+    ;; 11 -> d
+    (set-signal! sel0 1)
+    (set-signal! sel1 1)
+    (test-equal "MUX4: sel=11 -> out=d" (get-signal d) (get-signal out))
+
+    (test-assert "MUX4: after-delay called" (> (length test-events) 4))))
 
 (test-end "decelle-circuits")

@@ -2,7 +2,7 @@
 (define-module (decelle circuits)
   #:use-module (decelle wire)
   #:use-module (decelle gates)
-  #:export (half-adder full-adder ripple-carry-adder))
+  #:export (half-adder full-adder ripple-carry-adder mux-2 mux-4))
 
 (define (half-adder a b s c after-delay)
   (xor-gate a b s after-delay)
@@ -30,3 +30,40 @@
     (make-ripple a-lst b-lst c-start s-lst)
     (error "Wrong number of wires: RIPPLE-CARRY-ADDER"
            (list a-lst b-lst s-lst))))
+
+;; out = (NOT sel AND a) OR (sel AND b)
+(define (mux-2 a b sel out after-delay)
+  (let ((not-sel (make-wire))
+        (and-1 (make-wire))
+        (and-2 (make-wire)))
+    (inverter sel not-sel after-delay)
+    (and-gate not-sel a and-1 after-delay)
+    (and-gate sel b and-2 after-delay)
+    (or-gate and-1 and-2 out after-delay)
+    'ok))
+
+;; High order constructor
+(define (make-mux-n inputs selectors output after-delay)
+  ;; folding pairwise reduction
+  (define (reduce-level cur-lst next-lst sel)
+    (if (null? sel)
+      'ok
+      (let ((o (if (null? (cdr sel))
+                 output
+                 (make-wire))))
+        (mux-2 (car cur-lst) (cadr cur-lst) (car sel) o after-delay)
+        (if (null? (cddr cur-lst))
+          (reduce-level (cons o next-lst) '() (cdr sel))
+          (reduce-level (cddr cur-lst) (cons o next-lst) sel)))))
+  (if (and (> (length inputs) 0)
+           (= (expt 2 (length selectors))
+              (length inputs)))
+    (reduce-level inputs '() selectors)
+    (error "Wrong number of wires: MAKE-MUX-N"
+           (list inputs selectors))))
+
+(define (mux-4 a b c d sel0 sel1 out after-delay)
+  (make-mux-n (list a b c d)
+              (list sel0 sel1)
+              out
+              after-delay))
