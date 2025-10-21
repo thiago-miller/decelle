@@ -7,7 +7,8 @@
     (define (set-my-signal! new-value)
       (unless (= signal-value new-value)
         (set! signal-value new-value)
-        (for-each (λ (f) (f)) action-procedures)))
+        (for-each (λ (f) (f)) action-procedures))
+      'done)
     (define (accept-action-procedure! proc)
       (set! action-procedures
         (cons proc action-procedures))
