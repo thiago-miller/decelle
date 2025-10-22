@@ -1,13 +1,15 @@
 ;; src/decelle/gates.scm
 (define-module (decelle gates)
   #:use-module (decelle wire)
-  #:export (inverter and-gate or-gate xor-gate))
+  #:export (inverter and-gate or-gate xor-gate nand-gate nor-gate))
 
 ;; Local constants
-(define inverter-delay 2)
-(define and-gate-delay 3)
-(define or-gate-delay 5)
-(define xor-gate-delay 8)
+(define inverter-delay  2)
+(define and-gate-delay  3)
+(define or-gate-delay   5)
+(define xor-gate-delay  8)
+(define nand-gate-delay 5)
+(define nor-gate-delay  7)
 
 ;; Logical tests
 ;; Not the most efficient code, but it is simple
@@ -36,6 +38,20 @@
         ((and (= s1 1) (= s2 0)) 1)
         ((and (= s1 0) (= s2 1)) 1)
         ((and (= s1 0) (= s2 0)) 0)
+        (else (error "Invalid signal" (list s1 s2)))))
+
+(define (logical-nand s1 s2)
+  (cond ((and (= s1 1) (= s2 1)) 0)
+        ((and (= s1 1) (= s2 0)) 1)
+        ((and (= s1 0) (= s2 1)) 1)
+        ((and (= s1 0) (= s2 0)) 1)
+        (else (error "Invalid signal" (list s1 s2)))))
+
+(define (logical-nor s1 s2)
+  (cond ((and (= s1 1) (= s2 1)) 0)
+        ((and (= s1 1) (= s2 0)) 0)
+        ((and (= s1 0) (= s2 1)) 0)
+        ((and (= s1 0) (= s2 0)) 1)
         (else (error "Invalid signal" (list s1 s2)))))
 
 ;; High order constructor
@@ -76,6 +92,22 @@
   (make-gate
     xor-gate-delay
     logical-xor
+    (list a1 a2)
+    output
+    after-delay))
+
+(define (nand-gate a1 a2 output after-delay)
+  (make-gate
+    nand-gate-delay
+    logical-nand
+    (list a1 a2)
+    output
+    after-delay))
+
+(define (nor-gate a1 a2 output after-delay)
+  (make-gate
+    nor-gate-delay
+    logical-nor
     (list a1 a2)
     output
     after-delay))
