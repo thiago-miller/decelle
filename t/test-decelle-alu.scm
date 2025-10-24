@@ -26,7 +26,7 @@
 (define sel1   (make-wire))
 (define c-out  (make-wire))
 
-(make-alu a b sel0 sel1 out c-out mock-after-delay)
+(alu-4 a b sel0 sel1 out c-out mock-after-delay)
 
 (define a4 '(0 1 1 0)) ;; A = 6
 (define b4 '(1 0 1 0)) ;; B = 5

@@ -3,7 +3,7 @@
   #:use-module (decelle wire)
   #:use-module (decelle gates)
   #:use-module (decelle circuits)
-  #:export (make-alu))
+  #:export (alu-4))
 
 (define number-of-bits 4)
 
@@ -15,7 +15,7 @@
 ;; 1    1    SUB
 
 ;; 74181, the classic 4-bits ALU from TTL
-(define (make-alu a-lst b-lst sel0 sel1 out-lst c-out after-delay)
+(define (alu-4 a-lst b-lst sel0 sel1 out-lst c-out after-delay)
   (unless (and (= (length a-lst) number-of-bits)
                (= (length a-lst) (length b-lst) (length out-lst)))
     (error "Wrong number of wires: MAKE-ALU"
@@ -25,7 +25,7 @@
         (or-outs   (map (λ (_) (make-wire)) a-lst))
         (sum-outs  (map (λ (_) (make-wire)) a-lst))
         (sub-outs  (map (λ (_) (make-wire)) a-lst))
-        (b-inv     (map (λ (_) (make-wire)) a-lst))
+        (~b-lst    (map (λ (_) (make-wire)) a-lst))
         (c-in-add  (make-wire))
         (c-in-sub  (make-wire))
         (c-out-add (make-wire))
@@ -54,7 +54,7 @@
     (for-each
       (λ (b bi)
         (inverter b bi after-delay))
-      b-lst b-inv)
+      b-lst ~b-lst)
 
     ;; 10 -> ADD
     (ripple-carry-adder
@@ -68,7 +68,7 @@
     ;; 11 -> SUB
     (ripple-carry-adder
       a-lst
-      b-inv
+      ~b-lst
       c-in-sub
       sub-outs
       c-out-sub
