@@ -1,11 +1,10 @@
 ;; src/decelle/alu.scm
 (define-module (decelle alu)
+  #:use-module (decelle utils)
   #:use-module (decelle wire)
   #:use-module (decelle gates)
   #:use-module (decelle circuits)
   #:export (alu-4))
-
-(define number-of-bits 4)
 
 ;; ALU 4 operations: AND, OR, ADD, SUB
 ;; sel1 sel0 op
@@ -16,16 +15,13 @@
 
 ;; 74181, the classic 4-bits ALU from TTL
 (define (alu-4 a-lst b-lst sel0 sel1 out-lst c-out after-delay)
-  (unless (and (= (length a-lst) number-of-bits)
-               (= (length a-lst) (length b-lst) (length out-lst)))
-    (error "Wrong number of wires: MAKE-ALU"
-           (list a-lst b-lst out-lst)))
+  (check-wire-counts alu-4 4 a-lst b-lst out-lst)
 
-  (let ((and-outs  (map (λ (_) (make-wire)) a-lst))
-        (or-outs   (map (λ (_) (make-wire)) a-lst))
-        (sum-outs  (map (λ (_) (make-wire)) a-lst))
-        (sub-outs  (map (λ (_) (make-wire)) a-lst))
-        (~b-lst    (map (λ (_) (make-wire)) a-lst))
+  (let ((and-outs  (make-wire-list 4))
+        (or-outs   (make-wire-list 4))
+        (sum-outs  (make-wire-list 4))
+        (sub-outs  (make-wire-list 4))
+        (~b-lst    (make-wire-list 4))
         (c-in-add  (make-wire))
         (c-in-sub  (make-wire))
         (c-out-add (make-wire))
@@ -57,7 +53,7 @@
       b-lst ~b-lst)
 
     ;; 10 -> ADD
-    (ripple-carry-adder
+    (ripple-carry-adder-4
       a-lst
       b-lst
       c-in-add
@@ -66,7 +62,7 @@
       after-delay)
 
     ;; 11 -> SUB
-    (ripple-carry-adder
+    (ripple-carry-adder-4
       a-lst
       ~b-lst
       c-in-sub
