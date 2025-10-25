@@ -15,7 +15,7 @@
 
 ;; 74181, the classic 4-bits ALU from TTL
 (define (alu-4 a-lst b-lst sel0 sel1 out-lst c-out after-delay)
-  (check-wire-counts alu-4 4 a-lst b-lst out-lst)
+  (check-wire-counts 'alu-4 4 a-lst b-lst out-lst)
 
   (let ((and-outs  (make-wire-list 4))
         (or-outs   (make-wire-list 4))

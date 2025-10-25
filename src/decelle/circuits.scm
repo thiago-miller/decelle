@@ -27,7 +27,7 @@
                      (make-wire))))
         (full-adder (car ak) (car bk) c-in (car sk) c-out after-delay)
         (make-ripple (cdr ak) (cdr bk) c-out (cdr sk)))))
-  (check-wire-counts make-ripple-carry-adder-n n a-lst b-lst s-lst)
+  (check-wire-counts 'make-ripple-carry-adder-n n a-lst b-lst s-lst)
   (make-ripple a-lst b-lst c-start s-lst))
 
 (define (ripple-carry-adder-4 . args)
@@ -64,8 +64,8 @@
           ;; next pair
           (reduce-level (cddr cur-lst)
                         (cons o next-lst) sel)))))
-  (check-wire-counts make-mux-n n inputs)
-  (check-wire-counts make-mux-n (/ (log n) (log 2)) selectors)
+  (check-wire-counts 'make-mux-n n inputs)
+  (check-wire-counts 'make-mux-n (/ (log n) (log 2)) selectors)
   (reduce-level inputs '() selectors))
 
 (define (mux-4 a b c d sel0 sel1 out after-delay)
