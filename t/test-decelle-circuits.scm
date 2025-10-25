@@ -1,5 +1,6 @@
 ;; t/test-decelle-circuits.scm
 (use-modules (srfi srfi-64)
+             (decelle utils)
              (decelle wire)
              (decelle gates)
              (decelle circuits))
@@ -49,24 +50,31 @@
     (test-equal "FA: 1 1 1 -> sum=1 carry=1" 1 (get-signal sum))
     (test-equal "FA: 1 1 1 -> carry=1" 1 (get-signal cout))))
 
-;; RIPPLE-CARRY ADDER (2 bits)
-(test-group "ripple-carry-adder"
-  (let ((a-lst (list (make-wire) (make-wire)))
-        (b-lst (list (make-wire) (make-wire)))
-        (s-lst (list (make-wire) (make-wire)))
-        (c-in (make-wire))
+(test-group "ripple-carry-adder-4"
+  (let ((a-lst (make-wire-list 4))
+        (b-lst (make-wire-list 4))
+        (s-lst (make-wire-list 4))
+        (c-in  (make-wire))
         (c-out (make-wire)))
-    (ripple-carry-adder a-lst b-lst c-in s-lst c-out mock-after-delay)
+    (ripple-carry-adder-4 a-lst b-lst c-in s-lst c-out mock-after-delay)
 
     ;; Simulating 01 + 11 = 100
-    (set-signal! (car a-lst) 1)  ;; A0 = 1
-    (set-signal! (cadr a-lst) 0) ;; A1 = 0
-    (set-signal! (car b-lst) 1)  ;; B0 = 1
-    (set-signal! (cadr b-lst) 1) ;; B1 = 1
+    (set-signal! (car a-lst) 1)    ;; A0 = 1
+    (set-signal! (cadr a-lst) 0)   ;; A2 = 0
+    (set-signal! (caddr a-lst) 0)  ;; A3 = 0
+    (set-signal! (cadddr a-lst) 0) ;; A4 = 0
+
+    (set-signal! (car b-lst) 1)    ;; B0 = 1
+    (set-signal! (cadr b-lst) 1)   ;; B1 = 1
+    (set-signal! (caddr b-lst) 1)  ;; B2 = 1
+    (set-signal! (cadddr b-lst) 1) ;; B3 = 1
+
     (set-signal! c-in 0)
 
-    (test-equal "RCA: sum bit 0 = 0" 0 (get-signal (car s-lst)))
-    (test-equal "RCA: sum bit 1 = 0" 0 (get-signal (cadr s-lst)))
+    (test-equal "RCA: sum bit 1 = 1" 0 (get-signal (car s-lst)))
+    (test-equal "RCA: sum bit 0 = 1" 0 (get-signal (cadr s-lst)))
+    (test-equal "RCA: sum bit 0 = 1" 0 (get-signal (caddr s-lst)))
+    (test-equal "RCA: sum bit 0 = 1" 0 (get-signal (cadddr s-lst)))
     (test-equal "RCA: carry out = 1" 1 (get-signal c-out))))
 
 ;; MUX-2

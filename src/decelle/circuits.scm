@@ -1,8 +1,9 @@
 ;; src/decelle/circuits.scm
 (define-module (decelle circuits)
+  #:use-module (decelle utils)
   #:use-module (decelle wire)
   #:use-module (decelle gates)
-  #:export (half-adder full-adder ripple-carry-adder mux-2 mux-4))
+  #:export (half-adder full-adder ripple-carry-adder-4 mux-2 mux-4))
 
 (define (half-adder a b s c after-delay)
   (xor-gate a b s after-delay)
@@ -17,7 +18,7 @@
     'ok))
 
 ;; Use the least significant bit (LSB)
-(define (ripple-carry-adder a-lst b-lst c-start s-lst c-final after-delay)
+(define (make-ripple-carry-adder-n n a-lst b-lst c-start s-lst c-final after-delay)
   (define (make-ripple ak bk c-in sk)
     (if (null? ak)
       'ok
@@ -26,11 +27,11 @@
                      (make-wire))))
         (full-adder (car ak) (car bk) c-in (car sk) c-out after-delay)
         (make-ripple (cdr ak) (cdr bk) c-out (cdr sk)))))
-  (if (and (> (length a-lst) 0)
-           (= (length a-lst) (length b-lst) (length s-lst)))
-    (make-ripple a-lst b-lst c-start s-lst)
-    (error "Wrong number of wires: RIPPLE-CARRY-ADDER"
-           (list a-lst b-lst s-lst))))
+  (check-wire-counts make-ripple-carry-adder-n n a-lst b-lst s-lst)
+  (make-ripple a-lst b-lst c-start s-lst))
+
+(define (ripple-carry-adder-4 . args)
+  (apply make-ripple-carry-adder-n 4 args))
 
 ;; out = (NOT sel AND a) OR (sel AND b)
 (define (mux-2 a b sel out after-delay)
@@ -44,7 +45,7 @@
     'ok))
 
 ;; High order constructor
-(define (make-mux-n inputs selectors output after-delay)
+(define (make-mux-n n inputs selectors output after-delay)
   ;; folding pairwise reduction
   (define (reduce-level cur-lst next-lst sel)
     (if (and (null? (cddr cur-lst))
@@ -63,15 +64,13 @@
           ;; next pair
           (reduce-level (cddr cur-lst)
                         (cons o next-lst) sel)))))
-  (if (and (> (length inputs) 0)
-           (= (expt 2 (length selectors))
-              (length inputs)))
-    (reduce-level inputs '() selectors)
-    (error "Wrong number of wires: MAKE-MUX-N"
-           (list inputs selectors))))
+  (check-wire-counts make-mux-n n inputs)
+  (check-wire-counts make-mux-n (/ (log n) (log 2)) selectors)
+  (reduce-level inputs '() selectors))
 
 (define (mux-4 a b c d sel0 sel1 out after-delay)
-  (make-mux-n (list a b c d)
+  (make-mux-n 4
+              (list a b c d)
               (list sel0 sel1)
               out
               after-delay))
